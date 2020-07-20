@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>GlusterFS文件系统简单搭建 | Gridea</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://www.mtyy.org/favicon.ico?v=1595224151318">
+<link rel="stylesheet" href="https://www.mtyy.org/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="在两台腾讯云的机器上搭建GlusterFS分布式文件系统，先在/etc/hosts中配置hostname，保证能相互ping通，然后开始安装GlusterFS。
+假设我们有两台机器node1和node2，在每个机器上执行：
+yum inst..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://www.mtyy.org">
+        <img src="https://www.mtyy.org/images/avatar.png?v=1595224151318" class="site-logo">
+        <h1 class="site-title">Gridea</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      温故而知新
+    </div>
+    <div class="site-footer">
+      Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a class="rss" href="https://www.mtyy.org/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">GlusterFS文件系统简单搭建</h2>
+            <div class="post-date">2020-06-30</div>
+            
+            <div class="post-content" v-pre>
+              <p>在两台腾讯云的机器上搭建GlusterFS分布式文件系统，先在/etc/hosts中配置hostname，保证能相互ping通，然后开始安装GlusterFS。</p>
+<p>假设我们有两台机器node1和node2，在每个机器上执行：</p>
+<pre><code>yum install -y centos-release-gluster
+yum install -y glusterfs glusterfs-server glusterfs-fuse glusterfs-rdma
+systemctl start glusterd
+systemctl enable glusterd
+mkdir -p /data/glusterfs/v0
+</code></pre>
+<p>防火墙开启24007端口或直接关闭防火墙。</p>
+<p>然后在node1上添加节点</p>
+<pre><code>gluster peer probe node2
+gluster peer status
+</code></pre>
+<p>glusterfs是无中心的，在node1上执行成功后，在node2上使用</p>
+<pre><code>gluster peer status
+</code></pre>
+<p>就可以看到node1已结在集群中了，此命令不会显示当前机器。</p>
+<p>如果要删除节点，使用</p>
+<pre><code>gluster peer detach node2
+</code></pre>
+<p>此时创建卷</p>
+<pre><code>gluster volume create v0 transport tcp node1:/data/glusterfs/v0 node2:/data/glusterfs/v0
+</code></pre>
+<p>问题来了，这个时候总是报错：</p>
+<pre><code>volume create: v0: failed: Host node1 is not in 'Peer in Cluster' state
+</code></pre>
+<p>一番搜索后得知可能是因为下面的原因：<br>
+It turns out the problem I was having was due to NAT. I was trying to create gluster servers that were behind a NAT device and use the public IP to resolve the names. This is just not going to work properly for the local machine.</p>
+<p>在每台机器上的 /etc/hosts 将本地IP地址改为127.0.0.1之后解决。</p>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://www.mtyy.org/post/hello-gridea/">
+                  <h3 class="post-title">
+                    Hello Gridea
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+
+
+  </body>
+</html>
